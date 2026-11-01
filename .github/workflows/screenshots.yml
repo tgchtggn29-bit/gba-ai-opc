@@ -1,0 +1,32 @@
+name: 网站截图
+
+on:
+  workflow_dispatch:        # 在 Actions 页面手动点「Run workflow」
+  schedule:
+    - cron: '17 2 1 * *'    # 每月 1 号 10:17（北京时间）自动更新
+
+permissions:
+  contents: write
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 安装 Playwright 和中文字体
+        run: |
+          npm i --no-save playwright@1.48.2
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y fonts-noto-cjk
+      - name: 截图
+        run: node scripts/screenshots.mjs
+      - name: 提交截图
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add screenshots/*.png
+          git diff --cached --quiet || git commit -m "chore: 更新网站截图 $(date -u +%F)"
+          git push
